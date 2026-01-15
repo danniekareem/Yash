@@ -1,0 +1,74 @@
+/* ===== SIDEBAR ===== */
+.sidebar-wrapper {
+    background: linear-gradient(180deg, #0d1b2a, #1b263b);
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1rem;
+}
+
+/* Brand */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    padding: 15px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 1rem;
+}
+
+.sidebar-brand i {
+    font-size: 1.4rem;
+    color: #4dabf7;
+}
+
+/* Menu */
+.sidebar-menu {
+    flex-grow: 1;
+}
+
+.sidebar-menu .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ced4da;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    transition: all 0.25s ease;
+    font-weight: 500;
+}
+
+.sidebar-menu .nav-link i {
+    font-size: 1.1rem;
+}
+
+/* Hover */
+.sidebar-menu .nav-link:hover {
+    background: rgba(77, 171, 247, 0.15);
+    color: #ffffff;
+    transform: translateX(4px);
+}
+
+/* Active (optional if you add active class later) */
+.sidebar-menu .nav-link.active {
+    background: #4dabf7;
+    color: #fff;
+}
+
+/* Logout */
+.sidebar-menu .text-danger:hover {
+    background: rgba(220, 53, 69, 0.2);
+    color: #fff;
+}
