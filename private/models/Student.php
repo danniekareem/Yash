@@ -105,4 +105,35 @@ class Student extends Model
         $result = $this->query($sql, $params);
         return $result ? $result[0]->total : 0;
     }
+
+    public function getStudentsWithPayments($limit, $offset, $search = '')
+    {
+        $sql = "
+        SELECT s.*, 
+               IFNULL(SUM(p.amount),0) AS paid
+        FROM students s
+        LEFT JOIN payments p ON p.student_id = s.id
+        WHERE s.fullname LIKE :search OR s.phone LIKE :search
+        GROUP BY s.id
+        ORDER BY s.created_at DESC
+        LIMIT $limit OFFSET $offset
+    ";
+
+        return $this->query($sql, [
+            'search' => "%$search%"
+        ]);
+    }
+
+    public function countStudentsWithPayments($search = '')
+    {
+        $sql = "
+        SELECT COUNT(*) AS total
+        FROM students
+        WHERE fullname LIKE :search OR phone LIKE :search
+    ";
+
+        return $this->query($sql, [
+            'search' => "%$search%"
+        ])[0]->total ?? 0;
+    }
 }

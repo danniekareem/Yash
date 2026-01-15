@@ -48,15 +48,17 @@ $userRole = $_SESSION['user']['role'] ?? '';
 
     <h6><?= $_SESSION['user']['role'] === 'manager' ? 'Management' : 'Reception' ?></h6>
 
-    <a href="<?= ROOT ?>/dashboard">🏠 Dashboard</a>
+    <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
     <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
-    <a href="<?= ROOT ?>/students/add">➕ Add Student</a>
     <a href="<?= ROOT ?>/payments">💳 Payments</a>
+
 
     <?php if ($_SESSION['user']['role'] === 'manager'): ?>
         <h6>Management</h6>
+        <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
         <a href="<?= ROOT ?>/branches">🏢 Branches</a>
         <a href="<?= ROOT ?>/users">👥 Users</a>
+        <a href="<?= ROOT ?>/payments">💳 Payments</a>
         <a href="<?= ROOT ?>/reports">📊 Reports</a>
     <?php endif; ?>
 

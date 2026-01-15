@@ -50,7 +50,7 @@ class Auth extends Controller
         if ($user->role === 'management') {
             redirect('manager/dashboard');
         } else {
-            redirect('students/index');
+            redirect('students/dashboard');
         }
     }
 

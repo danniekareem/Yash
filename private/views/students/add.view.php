@@ -1,4 +1,5 @@
 <?php $this->view('includes/header'); ?>
+<?php $this->view('includes/navbar'); ?>
 <div class="d-flex">
     <?php $this->view('includes/sidebar'); ?>
 

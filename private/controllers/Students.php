@@ -23,48 +23,39 @@ class Students extends Controller
     // Show all students
     public function index()
     {
-        $studentModel = $this->studentModel;
-
-        // Pagination
         $limit = 10;
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $offset = ($page - 1) * $limit;
 
-        // Filters
         $filters = [];
-        $searchField = $_GET['search_field'] ?? '';
-        $searchValue = $_GET['search_value'] ?? '';
-        if (!empty($searchField) && !empty($searchValue)) {
-            $filters[$searchField] = $searchValue;
+        if (!empty($_GET['search_field']) && !empty($_GET['search_value'])) {
+            $filters[$_GET['search_field']] = $_GET['search_value'];
         }
 
-        // Fetch students based on role
+        // Restrict receptionist to their branch
         if ($_SESSION['user']['role'] === 'receptionist') {
             $filters['branch_id'] = $this->branch_id;
         }
 
-        // Get students with pagination
-        $students = $studentModel->getPaginated($limit, $offset, $filters);
+        $students = $this->studentModel->getPaginated($limit, $offset, $filters);
+        $totalStudents = $this->studentModel->countFiltered($filters);
+        $totalPages = ceil($totalStudents / $limit);
 
-        // Add branch names
+        // Attach branch names
         foreach ($students as &$s) {
             $branch = $this->branchModel->findById($s->branch_id);
             $s->branch_name = $branch ? $branch->name : 'Unknown';
         }
 
-        // Pagination info
-        $totalStudents = $studentModel->countFiltered($filters);
-        $totalPages = ceil($totalStudents / $limit);
-
-        // Pass everything to the view
         $this->view('students/index', [
             'students' => $students,
             'page' => $page,
             'totalPages' => $totalPages,
-            'searchField' => $searchField,
-            'searchValue' => $searchValue
+            'searchField' => $_GET['search_field'] ?? '',
+            'searchValue' => $_GET['search_value'] ?? ''
         ]);
     }
+
 
 
     public function add()
@@ -155,11 +146,14 @@ class Students extends Controller
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
             $amount = (float)$_POST['amount'];
             $payment_date = $_POST['payment_date'];
 
+            $remaining = $student->fees - ($student->paid ?? 0);
+
             // Validation
-            if ($amount <= 0 || $amount > ($student->fees - ($student->paid ?? 0))) {
+            if ($amount <= 0 || $amount > $remaining) {
                 $_SESSION['error'] = "Invalid payment amount.";
                 redirect('students');
             }
@@ -169,21 +163,75 @@ class Students extends Controller
                 redirect('students');
             }
 
-            // Add payment (assumes you have a payments table)
+            // 📸 Receipt upload
+            $receiptPath = null;
+
+            if (!empty($_FILES['receipt']['name'])) {
+
+                $allowed = ['image/jpeg', 'image/png'];
+                if (!in_array($_FILES['receipt']['type'], $allowed)) {
+                    $_SESSION['error'] = "Only JPG or PNG images allowed.";
+                    redirect('students');
+                }
+
+                $uploadDir = "uploads/receipts/";
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileName = uniqid('receipt_') . '_' . $_FILES['receipt']['name'];
+                $receiptPath = $uploadDir . $fileName;
+
+                move_uploaded_file($_FILES['receipt']['tmp_name'], $receiptPath);
+            }
+
+            // Save payment
             $paymentModel = new Payment();
             $paymentModel->insert([
-                'student_id' => $id,
-                'amount'     => $amount,
+                'student_id'   => $id,
+                'amount'       => $amount,
                 'payment_date' => $payment_date,
-                'created_at' => date('Y-m-d H:i:s')
+                'receipt'      => $receiptPath,
+                'created_at'   => date('Y-m-d H:i:s')
             ]);
 
-            // Update total paid in student record
-            $totalPaid = ($student->paid ?? 0) + $amount;
-            $this->studentModel->update($id, ['paid' => $totalPaid]);
+            // Update student paid
+            $this->studentModel->update($id, [
+                'paid' => ($student->paid ?? 0) + $amount
+            ]);
 
             $_SESSION['success'] = "Payment recorded successfully!";
-            redirect('students');
+            redirect('payments');
+        }
+    }
+
+
+    public function dashboard()
+    {
+        require_auth();
+
+        $userRole = $_SESSION['user']['role'] ?? '';
+
+        if ($userRole === 'receptionist') {
+            // Get total students for this receptionist's branch
+            $students = $this->studentModel->where('branch_id', $this->branch_id);
+
+            $totalStudents = count($students);
+
+            // Optionally, get total payments made for their students
+            $totalPaid = 0;
+            foreach ($students as $s) {
+                $totalPaid += $s->paid ?? 0;
+            }
+
+            // Load receptionist dashboard view
+            $this->view('students/dashboard', [
+                'totalStudents' => $totalStudents,
+                'totalPaid' => $totalPaid
+            ]);
+        } else {
+            // For manager, redirect to manager dashboard
+            redirect('manager/dashboard');
         }
     }
 }

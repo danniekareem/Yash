@@ -10,7 +10,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h3 class="fw-bold mb-1">Students</h3>
-                <small class="text-muted">Manage students and payments</small>
+                <small class="text-muted">Manage students</small>
             </div>
 
             <a href="<?= ROOT ?>/students/add" class="btn btn-primary">
@@ -55,10 +55,8 @@
 
                     <tbody>
                         <?php if (!empty($students)): ?>
-                            <?php foreach ($students as $s):
-                                $paid = $s->paid ?? 0;
-                                $balance = $s->fees - $paid;
-                            ?>
+                            <?php foreach ($students as $s): ?>
+                                <?php $paid = $s->paid ?? 0; ?>
                                 <tr>
                                     <td>
                                         <div class="fw-semibold"><?= esc($s->fullname) ?></div>
@@ -72,10 +70,10 @@
                                         <small class="text-muted">Paid: MK <?= number_format($paid) ?></small>
                                     </td>
                                     <td>
-                                        <?php if ($balance <= 0): ?>
-                                            <span class="badge bg-success">Paid</span>
+                                        <?php if ($s->status == 'inactive'): ?>
+                                            <span class="badge bg-danger">Inactive</span>
                                         <?php else: ?>
-                                            <span class="badge bg-warning text-dark">Balance MK <?= number_format($balance) ?></span>
+                                            <span class="badge bg-success">Active</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-nowrap">
@@ -86,12 +84,21 @@
                                             👁 View
                                         </button>
 
-                                        <!-- Pay Button -->
-                                        <button class="btn btn-sm btn-outline-success"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#payStudentModal<?= $s->id ?>">
-                                            💳 Pay
-                                        </button>
+                                        <!-- Update Button -->
+                                        <a href="<?= ROOT ?>/students/edit/<?= $s->id ?>" class="btn btn-sm btn-outline-info me-1">
+                                            ✏️ Update
+                                        </a>
+
+                                        <!-- Deactivate Button -->
+                                        <form method="POST"
+                                            action="<?= ROOT ?>/students/deactivate/<?= $s->id ?>"
+                                            class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to deactivate this student?');">
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                <?= $s->status == 'inactive' ? 'disabled' : '' ?>>
+                                                🚫 Deactivate
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
 
@@ -115,44 +122,11 @@
                                                     <div class="col-md-6"><strong>Branch:</strong> <?= esc($s->branch_name) ?></div>
                                                     <div class="col-md-6"><strong>Fees:</strong> MK <?= number_format($s->fees) ?></div>
                                                     <div class="col-md-6"><strong>Paid:</strong> MK <?= number_format($paid) ?></div>
-                                                    <div class="col-md-6"><strong>Balance:</strong> MK <?= number_format($balance) ?></div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
                                                 <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Pay Modal -->
-                                <div class="modal fade" id="payStudentModal<?= $s->id ?>" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <form method="POST" action="<?= ROOT ?>/students/pay/<?= $s->id ?>">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Make Payment: <?= esc($s->fullname) ?></h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label>Total Fees</label>
-                                                        <input type="text" class="form-control" value="MK <?= number_format($s->fees) ?>" readonly>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Amount to Pay</label>
-                                                        <input type="number" name="amount" class="form-control" min="1" max="<?= $balance ?>" required>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Payment Date</label>
-                                                        <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="submit" class="btn btn-success">Submit Payment</button>
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                </div>
-                                            </form>
                                         </div>
                                     </div>
                                 </div>
