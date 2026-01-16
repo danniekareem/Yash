@@ -2,6 +2,9 @@
 class Student extends Model
 {
     protected string $table = 'students'; // your DB table
+    protected $limit;
+    protected $offset;
+
 
     /**
      * Get paginated students with optional search
@@ -22,7 +25,10 @@ class Student extends Model
         'fees',
         'paid',
         'boarding',
-        'created_at'
+        'created_at',
+        'start_date',
+        'status'
+
     ];
 
     /**
@@ -50,15 +56,15 @@ class Student extends Model
     public function getPaginated($limit, $offset, $filters = [])
     {
         $sql = "SELECT s.*, b.name AS branch_name, 
-                   COALESCE(p.total_paid, 0) AS paid
-            FROM students s
-            LEFT JOIN branches b ON s.branch_id = b.id
-            LEFT JOIN (
-                SELECT student_id, SUM(amount) AS total_paid
-                FROM payments
-                GROUP BY student_id
-            ) p ON s.id = p.student_id
-            WHERE 1=1";
+               COALESCE(p.total_paid, 0) AS paid
+        FROM students s
+        LEFT JOIN branches b ON s.branch_id = b.id
+        LEFT JOIN (
+            SELECT student_id, SUM(amount) AS total_paid
+            FROM payments
+            GROUP BY student_id
+        ) p ON s.id = p.student_id
+        WHERE 1=1";
 
         $params = [];
 
@@ -71,15 +77,18 @@ class Student extends Model
                 } elseif ($field === 'start_date') {
                     $sql .= " AND s.start_date = ?";
                     $params[] = $value;
+                } elseif ($field === 'branch_id') { // 🔹 ADD THIS
+                    $sql .= " AND s.branch_id = ?";
+                    $params[] = $value;
                 }
             }
         }
 
-        // Inject limit & offset directly (safe because they are integers)
         $sql .= " ORDER BY s.id DESC LIMIT $limit OFFSET $offset";
 
         return $this->query($sql, $params);
     }
+
 
 
     /**
@@ -98,6 +107,9 @@ class Student extends Model
                 } elseif ($field === 'start_date') {
                     $sql .= " AND s.start_date = ?";
                     $params[] = $value;
+                } elseif ($field === 'branch_id') { // 🔹 ADD THIS
+                    $sql .= " AND s.branch_id = ?";
+                    $params[] = $value;
                 }
             }
         }
@@ -105,35 +117,156 @@ class Student extends Model
         $result = $this->query($sql, $params);
         return $result ? $result[0]->total : 0;
     }
-
-    public function getStudentsWithPayments($limit, $offset, $search = '')
+    /**
+     * Get students along with total payments, with optional search and branch restriction
+     */
+    /**
+     * Get paginated students with optional search and branch restriction
+     */
+    public function getPaginatedWithPayments($limit, $offset, $search = '', $branch_id = null)
     {
         $sql = "
-        SELECT s.*, 
-               IFNULL(SUM(p.amount),0) AS paid
-        FROM students s
-        LEFT JOIN payments p ON p.student_id = s.id
-        WHERE s.fullname LIKE :search OR s.phone LIKE :search
-        GROUP BY s.id
-        ORDER BY s.created_at DESC
-        LIMIT $limit OFFSET $offset
-    ";
+            SELECT s.*, 
+                   IFNULL(SUM(p.amount),0) AS paid,
+                   b.name AS branch_name
+            FROM students s
+            LEFT JOIN payments p ON p.student_id = s.id
+            LEFT JOIN branches b ON s.branch_id = b.id
+            WHERE (s.fullname LIKE :search OR s.phone LIKE :search)
+        ";
 
-        return $this->query($sql, [
-            'search' => "%$search%"
-        ]);
+        $params = ['search' => "%$search%"];
+
+        if ($branch_id !== null) {
+            $sql .= " AND s.branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        $sql .= "
+            GROUP BY s.id
+            ORDER BY s.created_at DESC
+            LIMIT $limit OFFSET $offset
+        ";
+
+        return $this->query($sql, $params);
     }
 
-    public function countStudentsWithPayments($search = '')
+    /**
+     * Count students with payments, optional search and branch restriction
+     */
+    public function countWithPayments($search = '', $branch_id = null)
     {
         $sql = "
-        SELECT COUNT(*) AS total
-        FROM students
-        WHERE fullname LIKE :search OR phone LIKE :search
-    ";
+            SELECT COUNT(*) AS total
+            FROM students s
+            WHERE (s.fullname LIKE :search OR s.phone LIKE :search)
+        ";
 
-        return $this->query($sql, [
-            'search' => "%$search%"
-        ])[0]->total ?? 0;
+        $params = ['search' => "%$search%"];
+
+        if ($branch_id !== null) {
+            $sql .= " AND s.branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        $result = $this->query($sql, $params);
+        return $result[0]->total ?? 0;
+    }
+
+    /**
+     * Count all students (optional branch restriction)
+     */
+    public function countAll($branch_id = null)
+    {
+        $sql = "SELECT COUNT(*) AS total FROM students";
+        $params = [];
+
+        if ($branch_id !== null) {
+            $sql .= " WHERE branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        $result = $this->query($sql, $params);
+        return $result[0]->total ?? 0;
+    }
+
+
+    /**
+     * Get students for a specific branch or all
+     */
+    public function getByBranch($branch_id = null)
+    {
+        $sql = "SELECT * FROM students";
+        $params = [];
+
+        if ($branch_id !== null) {
+            $sql .= " WHERE branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        return $this->query($sql, $params);
+    }
+
+    /**
+     * Sum a column (optional branch restriction)
+     */
+    public function sumColumn($column, $branch_id = null)
+    {
+        $sql = "SELECT SUM($column) AS total FROM students";
+        $params = [];
+
+        if ($branch_id !== null) {
+            $sql .= " WHERE branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        $result = $this->query($sql, $params);
+        return $result[0]->total ?? 0;
+    }
+
+
+    // Count rows matching conditions
+    public function countWhere(array $where = [])
+    {
+        if (empty($where)) {
+            return $this->countAll();
+        }
+
+        $keys = array_keys($where);
+        $conditions = implode(' AND ', array_map(fn($k) => "$k = :$k", $keys));
+        $query = "SELECT COUNT(*) as total FROM {$this->table} WHERE $conditions";
+        $result = $this->query($query, $where);
+
+        return $result[0]->total ?? 0;
+    }
+
+
+    // Sum a column
+    public function sum(string $column)
+    {
+        $query = "SELECT SUM($column) as total FROM {$this->table}";
+        $result = $this->query($query);
+        return $result[0]->total ?? 0;
+    }
+
+
+    public function limit(int $limit, int $offset = 0)
+    {
+        $this->limit  = $limit;
+        $this->offset = $offset;
+        return $this; // for chaining
+    }
+
+    public function findAllWithBranch($limit = null, $offset = 0)
+    {
+        $sql = "SELECT s.*, b.name AS branch_name
+            FROM {$this->table} s
+            LEFT JOIN branches b ON s.branch_id = b.id";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT {$offset}, {$limit}";
+        }
+
+        return $this->query($sql);
     }
 }

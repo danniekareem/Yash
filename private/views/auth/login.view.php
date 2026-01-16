@@ -21,7 +21,7 @@
 
     .login-left {
         flex: 1;
-        background: url('<?= ROOT ?>/assets/car.jpg') center/cover no-repeat;
+        background: url('<?= ROOT ?>/assets/yash.jpeg') center/cover no-repeat;
         min-height: 400px;
     }
 
@@ -95,8 +95,8 @@
     <!-- Right Side: Login Form -->
     <div class="login-right">
 
-        <h3>YASH</h3>
-        <p>Login to access your dashboard</p>
+        <h3>LOGIN</h3>
+
 
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger">

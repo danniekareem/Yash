@@ -45,8 +45,7 @@ $userRole = $_SESSION['user']['role'] ?? '';
 
 <div class="sidebar p-3">
     <h5 class="mb-1">🎓 Yash</h5>
-
-    <h6><?= $_SESSION['user']['role'] === 'manager' ? 'Management' : 'Reception' ?></h6>
+    <hr>
 
     <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
     <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>

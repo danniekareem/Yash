@@ -70,11 +70,9 @@
                                         <small class="text-muted">Paid: MK <?= number_format($paid) ?></small>
                                     </td>
                                     <td>
-                                        <?php if ($s->status == 'inactive'): ?>
-                                            <span class="badge bg-danger">Inactive</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-success">Active</span>
-                                        <?php endif; ?>
+                                        <span class="badge <?= $s->status === 'active' ? 'bg-success' : 'bg-secondary' ?>">
+                                            <?= ucfirst($s->status) ?>
+                                        </span>
                                     </td>
                                     <td class="text-nowrap">
                                         <!-- View Button -->
@@ -84,21 +82,19 @@
                                             👁 View
                                         </button>
 
-                                        <!-- Update Button -->
-                                        <a href="<?= ROOT ?>/students/edit/<?= $s->id ?>" class="btn btn-sm btn-outline-info me-1">
-                                            ✏️ Update
-                                        </a>
+                                        <!-- Edit -->
+                                        <button class="btn btn-sm btn-outline-warning"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editStudentModal<?= $s->id ?>">
+                                            ✏️ Edit
+                                        </button>
 
-                                        <!-- Deactivate Button -->
-                                        <form method="POST"
-                                            action="<?= ROOT ?>/students/deactivate/<?= $s->id ?>"
-                                            class="d-inline"
-                                            onsubmit="return confirm('Are you sure you want to deactivate this student?');">
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                <?= $s->status == 'inactive' ? 'disabled' : '' ?>>
-                                                🚫 Deactivate
-                                            </button>
-                                        </form>
+                                        <!-- Activate / Deactivate -->
+                                        <a href="<?= ROOT ?>/students/toggleStatus/<?= $s->id ?>"
+                                            class="btn btn-sm <?= $s->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' ?>"
+                                            onclick="return confirm('Are you sure?')">
+                                            <?= $s->status === 'active' ? 'Deactivate' : 'Activate' ?>
+                                        </a>
                                     </td>
                                 </tr>
 
@@ -130,6 +126,88 @@
                                         </div>
                                     </div>
                                 </div>
+
+
+
+                                <!-- Edit Modal -->
+                                <div class="modal fade" id="editStudentModal<?= $s->id ?>">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+
+                                            <form method="POST" action="<?= ROOT ?>/students/update/<?= $s->id ?>">
+
+                                                <div class="modal-header bg-warning">
+                                                    <h5 class="modal-title">Edit Student</h5>
+                                                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+
+                                                <div class="modal-body row g-3">
+
+                                                    <div class="col-md-6">
+                                                        <label>Full Name</label>
+                                                        <input type="text" name="fullname" class="form-control" value="<?= esc($s->fullname) ?>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Date of Birth</label>
+                                                        <input type="date" name="dob" class="form-control" value="<?= esc($s->dob) ?>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Start Date</label>
+                                                        <input type="date" name="start_date" class="form-control" value="<?= esc($s->start_date) ?>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Phone</label>
+                                                        <input type="text" name="phone" class="form-control" value="<?= esc($s->phone) ?>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Email</label>
+                                                        <input type="email" name="email" class="form-control" value="<?= esc($s->email) ?>">
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Category</label>
+                                                        <select name="category" class="form-select" required>
+                                                            <option value="C1" <?= $s->category === 'C1' ? 'selected' : '' ?>>C1</option>
+                                                            <option value="B" <?= $s->category === 'B'  ? 'selected' : '' ?>>B</option>
+                                                            <option value="A1" <?= $s->category === 'A1' ? 'selected' : '' ?>>A1</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Course</label>
+                                                        <select name="course_type" class="form-select" required>
+                                                            <option value="Full" <?= $s->course_type === 'Full' ? 'selected' : '' ?>>Full Course</option>
+                                                            <option value="Half" <?= $s->course_type === 'Half' ? 'selected' : '' ?>>Half Course</option>
+                                                            <option value="30 days" <?= $s->course_type === '30 days' ? 'selected' : '' ?>>30 Days</option>
+                                                            <option value="15 days" <?= $s->course_type === '15 days' ? 'selected' : '' ?>>15 Days</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label>Boarding</label>
+                                                        <select name="boarding" class="form-select">
+                                                            <option value="Yes" <?= $s->boarding == 'Yes' ? 'selected' : '' ?>>Yes</option>
+                                                            <option value="No" <?= $s->boarding == 'No' ? 'selected' : '' ?>>No</option>
+                                                        </select>
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button class="btn btn-warning">Update Student</button>
+                                                </div>
+
+                                            </form>
+
+                                        </div>
+                                    </div>
+                                </div>
+
 
                             <?php endforeach; ?>
                         <?php else: ?>

@@ -20,23 +20,27 @@ class Students extends Controller
         }
     }
 
-    // Show all students
     public function index()
     {
+        require_auth();
+
         $limit = 10;
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $offset = ($page - 1) * $limit;
 
         $filters = [];
+
+        // Search filters
         if (!empty($_GET['search_field']) && !empty($_GET['search_value'])) {
             $filters[$_GET['search_field']] = $_GET['search_value'];
         }
 
-        // Restrict receptionist to their branch
+        // 🔐 Restrict receptionist to their own branch
         if ($_SESSION['user']['role'] === 'receptionist') {
-            $filters['branch_id'] = $this->branch_id;
+            $filters['branch_id'] = $_SESSION['user']['branch_id'];
         }
 
+        // Fetch students
         $students = $this->studentModel->getPaginated($limit, $offset, $filters);
         $totalStudents = $this->studentModel->countFiltered($filters);
         $totalPages = ceil($totalStudents / $limit);
@@ -47,14 +51,17 @@ class Students extends Controller
             $s->branch_name = $branch ? $branch->name : 'Unknown';
         }
 
+        // Load view
         $this->view('students/index', [
-            'students' => $students,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'students'    => $students,
+            'page'        => $page,
+            'totalPages'  => $totalPages,
             'searchField' => $_GET['search_field'] ?? '',
             'searchValue' => $_GET['search_value'] ?? ''
         ]);
     }
+
+
 
 
 
@@ -75,6 +82,7 @@ class Students extends Controller
             $start_date  = $_POST['start_date'] ?? ''; // <- add this
             // Calculate fees
             $fees = $this->calculateFees($category, $course_type, $boarding);
+
 
 
             // Insert student
@@ -140,13 +148,18 @@ class Students extends Controller
     {
         $student = $this->studentModel->findById($id);
 
+        // Restrict receptionist
+        if ($_SESSION['user']['role'] === 'receptionist' && $student->branch_id != $_SESSION['user']['branch_id']) {
+            $_SESSION['error'] = "You are not allowed to access this student.";
+            redirect('students');
+        }
+
         if (!$student) {
             $_SESSION['error'] = "Student not found.";
             redirect('students');
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
             $amount = (float)$_POST['amount'];
             $payment_date = $_POST['payment_date'];
 
@@ -163,11 +176,9 @@ class Students extends Controller
                 redirect('students');
             }
 
-            // 📸 Receipt upload
+            // Receipt upload
             $receiptPath = null;
-
             if (!empty($_FILES['receipt']['name'])) {
-
                 $allowed = ['image/jpeg', 'image/png'];
                 if (!in_array($_FILES['receipt']['type'], $allowed)) {
                     $_SESSION['error'] = "Only JPG or PNG images allowed.";
@@ -175,13 +186,10 @@ class Students extends Controller
                 }
 
                 $uploadDir = "uploads/receipts/";
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
                 $fileName = uniqid('receipt_') . '_' . $_FILES['receipt']['name'];
                 $receiptPath = $uploadDir . $fileName;
-
                 move_uploaded_file($_FILES['receipt']['tmp_name'], $receiptPath);
             }
 
@@ -204,6 +212,7 @@ class Students extends Controller
             redirect('payments');
         }
     }
+
 
 
     public function dashboard()
@@ -233,5 +242,58 @@ class Students extends Controller
             // For manager, redirect to manager dashboard
             redirect('manager/dashboard');
         }
+    }
+
+
+    public function update($id)
+    {
+        $student = $this->studentModel->findById($id);
+
+        if (!$student) {
+            redirect('students');
+        }
+
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            $category    = $_POST['category'];
+            $course_type = $_POST['course_type'];
+            $boarding    = $_POST['boarding'] ?? 'no';
+
+            // Recalculate fees
+            $fees = $this->calculateFees($category, $course_type, $boarding);
+
+            $this->studentModel->update($id, [
+                'fullname'    => $_POST['fullname'],
+                'email'       => $_POST['email'],
+                'phone'       => $_POST['phone'],
+                'category'    => $category,
+                'course_type' => $course_type,
+                'boarding'    => $boarding,
+                'fees'        => $fees, // ✅ IMPORTANT
+                'status'      => $_POST['status'],
+            ]);
+
+            $_SESSION['success'] = "Student updated successfully";
+            redirect('students');
+        }
+
+        $this->view('students/edit', ['student' => $student]);
+    }
+
+
+    public function toggleStatus($id)
+    {
+        $student = $this->studentModel->findById($id);
+        if (!$student) redirect('students');
+
+        $newStatus = $student->status === 'active' ? 'inactive' : 'active';
+
+        $this->studentModel->update($id, [
+            'status' => $newStatus
+        ]);
+
+        $_SESSION['success'] = "Student status updated";
+        redirect('students');
     }
 }

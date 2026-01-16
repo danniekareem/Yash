@@ -48,7 +48,7 @@ class Auth extends Controller
 
 
         if ($user->role === 'management') {
-            redirect('manager/dashboard');
+            redirect('manager');
         } else {
             redirect('students/dashboard');
         }
