@@ -269,4 +269,57 @@ class Student extends Model
 
         return $this->query($sql);
     }
+
+    public function getStudentsByBranch($branch_id = null, $limit = null, $offset = 0)
+    {
+        $sql = "SELECT s.*, b.name AS branch_name
+            FROM {$this->table} s
+            LEFT JOIN branches b ON s.branch_id = b.id
+            WHERE 1=1";
+
+        $params = [];
+
+        if ($branch_id !== null) {
+            $sql .= " AND s.branch_id = :branch_id";
+            $params['branch_id'] = $branch_id;
+        }
+
+        if ($limit !== null) {
+            $sql .= " ORDER BY s.id DESC LIMIT {$offset}, {$limit}";
+        } else {
+            $sql .= " ORDER BY s.id DESC";
+        }
+
+        return $this->query($sql, $params);
+    }
+
+    /**
+     * Branch performance summary
+     */
+    public function branchPerformance()
+    {
+        $sql = "
+        SELECT 
+            b.id AS branch_id,
+            b.name AS branch_name,
+            COUNT(s.id) AS total_students,
+            SUM(CASE WHEN s.status='active' THEN 1 ELSE 0 END) AS active_students,
+            SUM(s.fees) AS total_fees,
+            SUM(s.paid) AS total_paid,
+            (SUM(s.fees) - SUM(s.paid)) AS outstanding
+        FROM branches b
+        LEFT JOIN {$this->table} s ON s.branch_id = b.id
+        GROUP BY b.id, b.name
+        ORDER BY b.name ASC
+    ";
+
+        return $this->query($sql);
+    }
+
+    public function sumColumnByBranch($column, $branch_id)
+    {
+        $sql = "SELECT SUM($column) AS total FROM {$this->table} WHERE branch_id = :branch_id";
+        $result = $this->query($sql, ['branch_id' => $branch_id]);
+        return $result[0]->total ?? 0;
+    }
 }
