@@ -322,4 +322,29 @@ class Student extends Model
         $result = $this->query($sql, ['branch_id' => $branch_id]);
         return $result[0]->total ?? 0;
     }
+
+    public function revenueByCategory($branch_id = null)
+    {
+        $where = '';
+        $params = [];
+
+        if ($branch_id) {
+            $where = 'WHERE branch_id = :branch_id';
+            $params['branch_id'] = $branch_id;
+        }
+
+        $sql = "
+        SELECT 
+            category,
+            SUM(fees) AS total_fees,
+            SUM(paid) AS total_paid,
+            (SUM(fees) - SUM(paid)) AS outstanding
+        FROM students
+        $where
+        GROUP BY category
+        ORDER BY category
+    ";
+
+        return $this->query($sql, $params);
+    }
 }

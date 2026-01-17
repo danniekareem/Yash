@@ -43,12 +43,22 @@ class Manager extends Controller
 
         $branches = $branchModel->findAll();
 
+        $studentModel = $this->load_model('Student');
+
+        // Branch filter (optional)
+        $branch_id = $_GET['branch_id'] ?? null;
+
+        // Revenue per category
+        $revenueByCategory = $studentModel->revenueByCategory($branch_id);
+
+
         $this->view('manager/dashboard', [
             'stats' => $stats,
             'students' => $recentStudents,
             'branches' => $branches,
             'selected_branch' => $branch_id,
-            'branchPerformance' => $branchPerformance
+            'branchPerformance' => $branchPerformance,
+            'revenueByCategory' => $revenueByCategory
         ]);
     }
 }

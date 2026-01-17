@@ -21,17 +21,18 @@ class Auth extends Controller
 
         if (!$user || !password_verify($password, $user->password)) {
             $_SESSION['error'] = 'Invalid email or password';
-            redirect('auth');
+            redirect('Auth');
         }
 
         if ($user->status !== 'active') {
             $_SESSION['error'] = 'Account inactive';
-            redirect('auth');
+            redirect('Auth');
         }
 
         // Load user and branch
-        $userModel   = $this->load_model('User');
-        $branchModel = $this->load_model('Branch');
+        
+         $userModel = new User(); 
+         $branchModel = $this->load_model('Branch');
 
         $user = $userModel->findByEmail($email); // or findById if you have user id
         $branch = $branchModel->findById($user->branch_id);
@@ -48,9 +49,9 @@ class Auth extends Controller
 
 
         if ($user->role === 'management') {
-            redirect('manager');
+            redirect('Manager');
         } else {
-            redirect('students/dashboard');
+            redirect('Students/dashboard');
         }
     }
 

@@ -104,7 +104,7 @@
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="<?= ROOT ?>/Login/login">
+        <form method="POST" action="<?= ROOT ?>/Auth/login">
 
             <div class="mb-3 input-with-icon">
                 <i class="bi bi-envelope input-icon"></i>
