@@ -46,18 +46,20 @@ $userRole = $_SESSION['user']['role'] ?? '';
 <div class="sidebar p-3">
     <h5 class="mb-1">🎓 Yash</h5>
     <hr>
+    <?php if ($_SESSION['user']['role'] === 'receptionist'): ?>
+        <h6>Receptionist</h6>
+        <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
+        <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
+        <a href="<?= ROOT ?>/payments">💳 Payments</a>
+    <?php endif; ?>
 
-    <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
-    <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
-    <a href="<?= ROOT ?>/payments">💳 Payments</a>
 
-
-    <?php if ($_SESSION['user']['role'] === 'manager'): ?>
+    <?php if ($_SESSION['user']['role'] === 'management'): ?>
         <h6>Management</h6>
+        <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
         <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
         <a href="<?= ROOT ?>/branches">🏢 Branches</a>
         <a href="<?= ROOT ?>/users">👥 Users</a>
-        <a href="<?= ROOT ?>/payments">💳 Payments</a>
         <a href="<?= ROOT ?>/reports">📊 Reports</a>
     <?php endif; ?>
 
