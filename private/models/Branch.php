@@ -7,6 +7,7 @@ class Branch extends Model
         'id',
         'name',
         'location',
+        'status',
         'created_at'
     ];
 }

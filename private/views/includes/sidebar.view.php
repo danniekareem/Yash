@@ -57,9 +57,9 @@ $userRole = $_SESSION['user']['role'] ?? '';
     <?php if ($_SESSION['user']['role'] === 'management'): ?>
         <h6>Management</h6>
         <a href="<?= ROOT ?>/students/dashboard">🏠 Dashboard</a>
-        <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
         <a href="<?= ROOT ?>/branches">🏢 Branches</a>
         <a href="<?= ROOT ?>/users">👥 Users</a>
+        <a href="<?= ROOT ?>/students">👩‍🎓 Students</a>
         <a href="<?= ROOT ?>/reports">📊 Reports</a>
     <?php endif; ?>
 

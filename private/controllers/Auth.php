@@ -16,44 +16,39 @@ class Auth extends Controller
         $email    = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
 
-        $userModel = new User();
+        $userModel   = $this->load_model('User');
+        $branchModel = $this->load_model('Branch');
+
         $user = $userModel->findByEmail($email);
 
         if (!$user || !password_verify($password, $user->password)) {
             $_SESSION['error'] = 'Invalid email or password';
-            redirect('Auth');
+            redirect('auth');
         }
 
         if ($user->status !== 'active') {
             $_SESSION['error'] = 'Account inactive';
-            redirect('Auth');
+            redirect('auth');
         }
 
-        // Load user and branch
-        
-         $userModel = new User(); 
-         $branchModel = $this->load_model('Branch');
-
-        $user = $userModel->findByEmail($email); // or findById if you have user id
         $branch = $branchModel->findById($user->branch_id);
 
-        // Save to session
         $_SESSION['user'] = [
             'id'          => $user->id,
-            'name'        => $user->fullname, // display name
+            'name'        => $user->fullname,
             'email'       => $user->email,
             'role'        => $user->role,
             'branch_id'   => $user->branch_id,
             'branch_name' => $branch ? $branch->name : 'Unknown'
         ];
 
-
         if ($user->role === 'management') {
-            redirect('Manager');
+            redirect('manager');
         } else {
-            redirect('Students/dashboard');
+            redirect('students/dashboard');
         }
     }
+
 
     public function logout()
     {

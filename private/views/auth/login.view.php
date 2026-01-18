@@ -98,10 +98,12 @@
         <h3>LOGIN</h3>
 
 
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger">
-                <?= $error ?>
+        <?php if (!empty($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <?= $_SESSION['error'] ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
         <form method="POST" action="<?= ROOT ?>/Auth/login">
